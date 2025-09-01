@@ -18,6 +18,7 @@ public class Profile {
     private Long userProfileId;
 
     @OneToOne
+    @JoinTable
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 

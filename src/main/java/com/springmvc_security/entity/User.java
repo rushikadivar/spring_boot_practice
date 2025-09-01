@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Set;
+import com.springmvc_security.config.Role;
+
 @Entity
 @Table(name = "user_table"/*, uniqueConstraints = {
         @UniqueConstraint(columnNames = {"user_name", "user_email"}) // enforce uniqueness across multiple columns together e.g. compositeKey (user_name + user_email must be unique as a pair)
@@ -31,4 +34,8 @@ public class User {
 
     @Column(name = "user_password", length = 250, nullable=false)
     public String password;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
+    private Set<Role> roles;
 }
