@@ -15,14 +15,16 @@ public class Profile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long userProfileId;
 
     @OneToOne
-    @JoinColumn(name = "user_profile_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private String name;
+    @Column(name = "full_name", nullable = false, length = 250)
+    private String fullName;
 
+    @Column(name = "photo_url")
     private String photo;
 
 }

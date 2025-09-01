@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "user_table", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_name", "user_email"})
-})
+@Table(name = "user_table"/*, uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_name", "user_email"}) // enforce uniqueness across multiple columns together e.g. compositeKey (user_name + user_email must be unique as a pair)
+}*/)
 @Getter
 @Setter
 @AllArgsConstructor
@@ -20,14 +20,15 @@ public class User {
     @Column(name = "user_id")
     private Long id;
 
-//    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-//    private Profile profile;
-    @Column(name = "user_name", nullable=false, length = 100, unique=true)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Profile profile;
+    
+    @Column(name = "user_name", length = 100, nullable=false, unique=true)
     public String username;
 
-    @Column(name="user_email", nullable=false, unique=true, length = 100, updatable = false)
+    @Column(name="user_email", length = 100, nullable=false, unique=true, updatable = false)
     public String email;
 
-    @Column(name = "user_password", nullable=false, length = 250)
+    @Column(name = "user_password", length = 250, nullable=false)
     public String password;
 }

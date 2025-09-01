@@ -1,5 +1,6 @@
 package com.springmvc_security.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -7,9 +8,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.validation.annotation.Validated;
 
 @NoArgsConstructor
-@AllArgsConstructor
 @Getter
 public class UserRequestDto {
     @NotBlank
@@ -21,7 +22,9 @@ public class UserRequestDto {
     @Size(min = 2, max = 100)
     private String email;
 
-    @Setter
+    @Valid
+    private UserProfileRequestDto profile;
+//    @Setter
     @NotBlank(message = "Password cannot be blank")
     @Size(min = 2, max = 250)
     private String password;

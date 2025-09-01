@@ -1,5 +1,6 @@
 package com.springmvc_security.controller;
 
+import com.springmvc_security.dto.UserPatchRequestDto;
 import com.springmvc_security.dto.UserRequestDto;
 import com.springmvc_security.dto.UserResponseDto;
 import com.springmvc_security.dto.UserSearchRequest;
@@ -24,23 +25,19 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private ProfileService profileService;
-
     @GetMapping("/all")
     public ResponseEntity<List<?>> getAllUsers() {
         return new ResponseEntity<>(this.userService.findAll(), HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> getUserById(@PathVariable(name = "id") @Positive(message = "id should be positive") Long id) {
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserResponseDto> getUserById(@PathVariable(name = "userId") @Positive(message = "id should be positive") Long id) {
         return new ResponseEntity<>(userService.getUserById(id), HttpStatus.OK);
     }
 
     @PostMapping()
     public ResponseEntity<?> saveUser(@RequestBody() @Valid UserRequestDto user) {
-        this.userService.save(user);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        return new ResponseEntity<>(this.userService.save(user), HttpStatus.CREATED);
     }
 
     @GetMapping()
@@ -48,20 +45,19 @@ public class UserController {
         return new ResponseEntity<>(this.userService.getUserBy(userSearchRequest), HttpStatus.OK);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@Positive(message = "id should be positive") @PathVariable("id") Long id) {
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<?> deleteUser(@Positive(message = "id should be positive") @PathVariable("userId") Long id) {
         this.userService.deleteUserById(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable() Long id, @RequestBody @Valid UserRequestDto user) {
-        this.userService.updateUserById(id, user);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    @PatchMapping("/{userId}")
+    public ResponseEntity<?> updateUserPartial(@Positive(message = "id should be positive") @PathVariable(name = "userId") Long id, @RequestBody @Valid UserPatchRequestDto user) {
+        return new ResponseEntity<>(this.userService.updateUserPartialById(id, user), HttpStatus.OK);
     }
 
-    @PostMapping("/{id}/profile")
-    public ResponseEntity<?> updateUserProfile(@PathVariable Long id, @RequestBody Profile profile) {
-        return new ResponseEntity<>(profileService.updateUserProfile(id, profile), HttpStatus.CREATED);
+    @PutMapping("/{userId}")
+    public ResponseEntity<?> updateUser(@Positive(message = "id should be positive") @PathVariable(name = "userId") Long id, @RequestBody @Valid UserRequestDto user) {
+        return new ResponseEntity<>(this.userService.updateUserById(id, user), HttpStatus.OK);
     }
 }

@@ -1,16 +1,17 @@
 package com.springmvc_security.services;
 
-import com.springmvc_security.dto.UserRequestDto;
-import com.springmvc_security.dto.UserResponseDto;
-import com.springmvc_security.dto.UserSearchRequest;
+import com.springmvc_security.dto.*;
+import com.springmvc_security.entity.Profile;
 import com.springmvc_security.entity.User;
 import com.springmvc_security.exceptionhandling.UserAlreadyExist;
 import com.springmvc_security.exceptionhandling.UserNotFoundException;
 import com.springmvc_security.repository.UserRepository;
 import com.springmvc_security.repository.UserSpecification;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class UserService {
@@ -22,12 +23,12 @@ public class UserService {
     }
 
     public List<UserResponseDto> findAll() {
-        return userRepository.findAll().stream().map(user -> new UserResponseDto(user.getId(), user.getUsername(), user.getEmail())).toList();
+        return userRepository.findAll().stream().map(user -> new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), mapUserToUserProfileResponseDto(user.getProfile()))).toList();
     }
 
     public UserResponseDto getUserById(Long id) {
         return userRepository.findById(id)
-                .map(user -> new UserResponseDto(user.getId(), user.getUsername(), user.getEmail()))
+                .map(user -> new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), mapUserToUserProfileResponseDto(user.getProfile())))
                 .orElseThrow(() -> new UserNotFoundException("No user exist: Id=" + id));
     }
 
@@ -44,14 +45,14 @@ public class UserService {
 //        return userRepository.findUserByUsername(userSearchRequest.getUsername())
 //                .map(user -> new UserResponseDto(user.getId(), user.getUsername(), user.getEmail()))
 //                .orElseThrow(() -> new UserNotFoundException("No user exist: username=" + userSearchRequest.getUsername()));
-
         UserSpecification userSpecification = new UserSpecification(userSearchRequest);
         return userRepository.findUserBy(userSpecification)
-                .stream().findFirst().map(user -> new UserResponseDto(user.getId(), user.getUsername(), user.getEmail()))
+                .stream().findFirst().map(user -> new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), mapUserToUserProfileResponseDto(user.getProfile())))
                 .orElseThrow(() -> new UserNotFoundException("No user exist:"));
     }
 
-    public void save(UserRequestDto userDto) {
+    @Transactional
+    public UserResponseDto save(UserRequestDto userDto) {
         if (userRepository.existsUserByEmail(userDto.getEmail()) || userRepository.existsUserByUsername(userDto.getUsername())) {
             throw new UserAlreadyExist("User already exists");
         }
@@ -62,7 +63,17 @@ public class UserService {
         user.setUsername(userDto.getUsername());
         user.setEmail(userDto.getEmail());
         user.setPassword(userDto.getPassword());
-        userRepository.save(user);
+
+        if (Objects.nonNull(userDto.getProfile())) {
+            Profile profile = new Profile();
+            profile.setPhoto(userDto.getProfile().getPhoto());
+            profile.setFullName(userDto.getProfile().getFullName());
+            profile.setUser(user);
+            user.setProfile(profile);
+        }
+
+        User dbUser = userRepository.save(user);
+        return new UserResponseDto(dbUser.getId(), dbUser.getUsername(), dbUser.getEmail(), mapUserToUserProfileResponseDto(dbUser.getProfile()));
     }
 
     private boolean isPasswordStrong(String password) {
@@ -70,7 +81,7 @@ public class UserService {
         return password.matches("");
     }
 
-    //    @Transactional
+    @Transactional
     public void deleteUserById(Long id) {
         if (!userRepository.existsById(id)) {
             throw new UserNotFoundException("No user exist: Id=" + id);
@@ -78,14 +89,32 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    public void updateUserById(Long id, UserRequestDto userDto) {
+    @Transactional
+    public UserResponseDto updateUserById(Long id, UserRequestDto userDto) {
         User dbUser = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("No user exist: Id=" + id));
-        if (!dbUser.getUsername().equals(userDto.getUsername())) {
-            dbUser.setUsername(userDto.getUsername());
+        dbUser.setUsername(userDto.getUsername());
+        dbUser.setPassword(userDto.getPassword());
+        dbUser = userRepository.save(dbUser);
+        return new UserResponseDto(dbUser.getId(), dbUser.getUsername(), dbUser.getEmail(), mapUserToUserProfileResponseDto(dbUser.getProfile()));
+    }
+
+    @Transactional
+    public UserResponseDto updateUserPartialById(Long id, UserPatchRequestDto userPatchDto) {
+        User dbUser = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("No user exist: Id=" + id));
+        if (Objects.nonNull(userPatchDto.getUsername()) && !dbUser.getUsername().equals(userPatchDto.getUsername())) {
+            dbUser.setUsername(userPatchDto.getUsername());
         }
-        if (!dbUser.getPassword().equals(userDto.getPassword())) {
-            dbUser.setPassword(userDto.getPassword());
+        if (Objects.nonNull(userPatchDto.getPassword()) && !dbUser.getPassword().equals(userPatchDto.getPassword())) {
+            dbUser.setPassword(userPatchDto.getPassword());
         }
-        userRepository.save(dbUser);
+        dbUser = userRepository.save(dbUser);
+        return new UserResponseDto(dbUser.getId(), dbUser.getUsername(), dbUser.getEmail(), mapUserToUserProfileResponseDto(dbUser.getProfile()));
+    }
+
+    private UserProfileResponseDto mapUserToUserProfileResponseDto(Profile profile) {
+        if (Objects.nonNull(profile)) {
+            return new UserProfileResponseDto(profile.getUserProfileId(), profile.getFullName(), profile.getPhoto(), null);
+        }
+        return null;
     }
 }
