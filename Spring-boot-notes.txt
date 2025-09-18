@@ -1,0 +1,779 @@
+@Lazy is used at class level to lazily initialized the Bean
+	1. if no any dependency injection found for that bean to resolve in any respective class it will not instantiated that been unless explcitily call at run time.
+	2. if @Lazy is used with any of the dependendent bean dependency(3 types) and the dependendent class is even marked as the @Lazy annotation to resolve it will use the proxy of that bean actuall call will be at run time. usefull in circular dependency.
+	
+
+@ConditionalOnProperty:
+1. if want to conditionally load the bean only if neccessary.
+	 use prefix and value (from property file) with the @ConditionalOnProperty annotation. and use requested to false on bean injection to fail safe.
+	
+Dyanmic bean initialization:
+1. use all the beans with @Qualifier and @Component
+		and use same with injection time.
+		and conditionally use the bean with the user request param
+		
+2. use custom @Configuration by default using @EnableAutoConfiguration.
+	prepare Bean of abstract class/interface and dynamically return the expected bean based on the value taken from property file by assigning it to method param().
+	
+ACID property: @Transactional property bring all the ACID property to use
+
+@Transactional 
+1. used at class level:
+	all the public method will follow Transactional
+2. used at method level:
+	work for only method:
+	
+// pending transcation...
+-----
+
+Bean Scopes:
+1. singletone
+2. prototype
+3. session
+4. request
+
+1. singletone type bean is always eagrly initialized when application starts
+2. other type bean are lazily initialized.
+
+
+
+----------------------------------------------------------------------------------------------------
+spring boot basics
+1) comes up with embedded tomcate(configurable to use any)
+
+Annotations:
+1) @SpringBootApplication
+-> setup the springboot application context automatically
+-> used at main class 
+-> no longer need to explcitily create the application context manually
+-> this annotation pre configures below things automatically behind the scene and comes up along with this annotation
+	1) embedded server configuration
+	2) @ComponentScan
+	=> automatic component scanning
+	3) @EnableAutoConfiguration
+	=> let's you configure the third party services by configuring them
+		1. configure required dependency in pom.xml
+		2. configure all the properties in application.properties
+		3. hence no manually configuration requires
+	e.g. integrating Ms SQL server, configuring it doesn't needed to manually initiating and connection SQL serve manually. this annotation helps you do it automatically
+	4) @Configuration
+	-> it let's you specify the configuration
+	-> uses at class level
+	-> used along with @Bean at function level to create the Bean
+	
+-> in a application, only one Main method and with @SpringBootApplication annotation could be present.
+-> default @ComponentScan radar is the root package of the application where SpringBootApplication resides - package of SpringBootApplication
+	
+2) @Bean
+-> setup of class object
+-> has to be configure manually in spring
+-> IOC container handles it, basically object of class.
+-> used at Function level mainly. the class which Bean has to be registered and maitain under the @ComponentScan radar by ApplicationContext 
+regardless at what nested level it was used. e.g. @Component, @Service, @Repository internally uses @Bean so are eligible for @Bean.
+
+4) @ComponentScan
+-> used at main class application entry point, to scan all the Bean/classes/Component in application radar and register all them as Bean in ApplicationContext
+-> default radar value if not specified - main application Package(root package)
+
+3) @Component
+-> used at class level, to be scan in @ComponentScan radar and register as Bean in ApplicationContext - uses @Bean internally
+
+4) @RestController
+-> entry point of any API request, handles and serves the request
+-> for JSON, XML reponse unlike views and html response in @controller.
+-> used at controller package class level, uses @Bean internally
+-> @Controller + @ResponseBody
+
+5) @ResponseBody
+-> explcitily mentioning to not to use return type as view(.jsp) instead consider it as the Body.
+-> use at 
+	1) class level
+	-> whole class method has to follow
+	2) method level
+	-> method has to follow
+-> internally it creates the ResponseEntity class if not specified explcitily
+	
+6) @RequestParam
+-> used for key-value pair in http request after the ? mark.
+-> type casting:
+	=> automatic type casting are performed from URL to java respective data type class including Boxing, Unboxing
+		1. for custom class mapping - use PropertyEditor
+		-> executed before controller method
+		e.g. String to Date
+-> can't be differentiate on same endpoint having different data tyeps only - cann't create 2 different method for this
+e.g. http://localhost:8001/api/v1?user=ramesh
+
+6) @PathVariable
+-> used for path http request. to extract the paths from url to bind it to controller method
+-> type casting:
+	=> automatic type casting are performed from URL to java respective data type class including Boxing, Unboxing
+		1. for custom class mapping - use PropertyEditor
+		-> executed before controller method
+		e.g. String to Date
+-> can't be differentiate on same endpoint having different data tyeps only - cann't create 2 different method for this
+e.g. http://localhost:8001/api/v1/{resource}
+
+7) @RequestBody
+-> internally it uses constructor based injection so, Constructor/setter any of them could be used.
+-> used with Post method
+-> for custom class mapping from JSON body to the POJO
+	=> internally uses GSON or Jackson for deserilize JSON to POJO
+	
+
+8) @ModelAttribute
+-> internally it uses the Setter based injection - via reflection API
+-> uses for GetMapping mapping from URL requestParam to pojo
+-> use at argument variable. for get no need to explicity mention. 
+-> can not be used with @PathVariable and explcitily @RequestParam
+
+
+
+Dependencies needed
+1) Spring starter Web:
+-> needed for creating APIs. like MVC architecture
+-> comes up with tomcate embedded
+
+
+
+Context path:
+-> application name after main URL
+-> configure: 
+e.g. localhost:8080/applicationName
+
+
+
+Core components:
+1) IOC Container - Inversion of control
+-> as per the principle it gives the control of Bean creation/registering and maintaning to external framework rather than managing it manually.
+-> let spring boot creates the Beans(Object of class) and retrive from application context rather than creating and managing it manually
+-> it scan the classes of @Component annotation classes and creates the Bean of it.
+-> registered Bean can be used anywhere in the application.
+
+2) ApplicationContext
+-> it's the way to achieve the IOC container
+-> can say that implmentation of IOC container by registering and maintaing all the Bean which are under the radar of @ComponentScan and the classes which are mentioned as the @Component
+-> so behind the scene it asks to ApplicationContext for requires Bean
+
+3) DependencyInjection
+-> implmentating IOC container
+-> a way to injecting Bean from one class to another
+	1. @Autowired
+	-> can be used at Field level
+	
+4) Bean lifecycle
+
+
+
+Bean lifecycle
+1) IOC container is started
+2) scan all the beans under the radar of @ComponentScan
+3) Bean Intantiation
+4) Dependency injection - resolve all nested dependencies of bean being instantiating
+5) post process after bean creation and before ready to use - custom actions
+	e.g. init
+	e.g. @PostConstruct - initializing connection, @PreDestroy - closing connection
+	ways to achieve this steps:
+	1. Interfaces to customize the bean nature - let's you override the method
+		=> InitialingBean - similar to @PostConstruct		
+	2. annotation - prefered over the Interfaces
+		=> @PostConstruct
+			1. annotate any method by @PostConstruct
+			2. in return type methods - returned values are simply ignored by reflection 
+			use no-arg, void method
+6) bean is ready to use
+7) pre process before destroying bean - custom actions
+	e.g. dispose
+	e.g. @PreDestroy - closing connection
+	ways to achieve this steps:
+	1. Interfaces to customize the bean nature - let's you override the method
+		=> DisposableBean - similar to @PreDestroy
+	2. annotation - prefered over the Interfaces
+		=> @PreDestroy
+			1. annotate any no-arg method by @PreConstruct
+			2. in return type methods - returned values are simply by reflection 
+			use no-arg, void method
+
+8) destroy
+
+
+DependencyInjection
+1. it's the way to implment the IoC principle - giving control to external source for Bean creation and managing dependencies internally.
+2. it achieve the Depen Inversion rule - 
+Dependency principle rule of SOLID principle - Do not depend on concrete implmentation rather than abstraction
+-> on application startup all the beans are instantiated by default constructor unless @Constructor injection is used to override this behaviour use the @Configuration class for customizing Bean creation flow. so basically IOC container also look for the @Configuration class on starup for Bean definition. typical use case is @Autowired injection and @Setter Injection.
+types:
+	1. Field Injection
+	-> using @Autowired directly to destination class.
+	-> doesn't require explicit constructor, it uses the default constructor
+	-> if parameterized/default constructor is there use @Configuration and custom @Bean creation method.
+	Advantages:
+	1. easy to use.
+	2. minimum boiler plate code
+	
+	Disadvantages:
+	1. can't be used with Immutable fields
+	e.g. @Autowired - it won't work
+		public final Order order;
+	2. chances of NPE
+	e.g. order is Injected using @Autowired in User class.
+	and on User u = new User(); // with default constructor - creating manual object break it. unless you use the DI for User.
+			u.order // would be null.
+			
+	2. Setter Injection
+	-> using @Autowired on setter method of that object
+	e.g. public Order order;
+		@Autowired
+		public void setOrder(Order order) {
+			this.order = order;
+		}
+	Advantages:
+	-> dependency can be changed anytime during runtime.
+		e.g. default order is intantiated by spring DI but it's implmentation class can be injected at runtime by normally calling setter method.
+	-> easy of testing
+	
+	Disadvantages
+	-> field can't be Immutable - field can't be define as the final.
+	e.g. public final Order order; // it won't work.
+		@Autowired
+		public void setOrder(Order order) {
+			this.order = order;
+		}
+	-> difficult to read and maintain - it's like is there any DI mentioned down the way for this field by setter injection.
+	
+	3. Constructor Injection
+	-> dependencies are injected and resolved at the time of Bean creation
+	-> for @Lazy marked dependencies(@Lazy is used at DI field), it uses the proxy of that bean instead actual Bean.
+		1. @Lazy is used in DI over the field.
+		e.g. @Lazy 
+			 @Autowired
+			 public Order order;
+		2. if @Lazy is used with any of the dependendent bean dependency(3 types) and the dependendent class is even marked as the @Lazy annotation to resolve it will use the proxy of that bean actuall call will be at run time. usefull in circular dependency.
+	e.g.
+		public final Order order;
+		public final Service service;
+		@Autowired
+		public User(Order order) {
+			this.order = order
+		}
+		
+		public User(Service service) {
+			this.order = order
+		}
+	-> in newer version for single constructor no need to mark the @Autowired explcitly.
+	-> for multiple constructor have to mark one of the constructor with @Autowired
+	-> for Bean creation it has to use and give the priority to constructor DI and bean would use that constructor to intantiate Bean.
+	
+	Advantages:
+	-> Bean would be fully initialized with all mandatory dependencies hence no NPE
+	-> can achieve field Immutablity
+	-> fail fast:
+		1. missing dependencies leads to compile time error rather than runtime
+	-> unit test becomes easy
+	
+	Disadvantages:
+	-> higher number of dependencies leads to the higher number of argument in constructor parameter
+	
+	
+Common issues we face in DI:
+	1) circular dependencies:
+		-> both class are dependent to each other
+		e.g. 
+			public class Order{
+				@Autowired
+				public Service service;
+			}
+			
+			public class Service {
+				@Autowired
+				public Order order;
+			}
+
+		solution: 
+		1. remove the cycle - eliminate the each over dependencies
+		2. mark @Lazy annotation to it's DI field, for any of the class. - can be used in all 3 types of DI
+		3. instead of injecting each over other. use the @PostConstruct to setThe current Bean to next bean.
+		e.g. public class Order {
+				@Autowired
+				public Service service;
+				
+				@PostConstruct
+				public void setOrder() {
+					service.setOrder(this);
+				}
+			 }
+			 
+			 public class Service {
+				public Order order;
+				
+				public void setOrder(Order order) {
+					this.order = order;
+				}
+			 }
+		 
+	2. Unsatisified Dependency:
+		-> on abstract reference, if interface has multiple implementation class, leads to ambiguity
+		Exception: UnsatisifiedDependencyException
+
+		solution:
+			1. using @Qualifier at runtime.
+				-> use at the DI field with value which concrete implementation to be used.
+				-> control to the concrete class definition
+				Disadvantages:
+					1. it breaks the Dependency Inversion principle
+					-> eventually we are dependent on concrete implementation
+					
+					solution:
+						1. Qualifier both the object with seperate field and abstract reference and on exuection use the if-else
+						e.g.
+							@Qualifier("UserService")
+							@Autowired
+							public Service userService;
+							
+							@Qualifier("OrderService")
+							@Autowired
+							public Service orderService;
+							
+							public void checkoutOrder(@RequestParam boolean isUserService) {
+								// here at stage let user request for a type of order
+								if(isUserService) {
+									// do userService
+								}
+								else {
+									// do orderService
+								}
+							}
+												
+							
+			2. using @Primary annotation
+				-> use this annotation at class level. along with @Component. to mark as the primary Bean of abstract reference.
+				-> control to the caller class where DI has to resolved.
+				-> moreover if need to change the other value to Qualifier. also use the @Qualifier annotation at class level with custom value.
+				
+				e.g.
+				interface Service {
+					
+				}	
+					
+				@Qualifier("UserServiceImp")
+				public class UserService implements Service {
+					
+				}
+				
+				@Qualifier("OrderServiceImp")
+				public class OrderService implements Service {
+
+				}
+				
+				public class Order{
+					@Autowired
+					@Qualifier("UserServiceImp")
+					public Service service;
+				}
+				
+			3. using @ConditionalOnProperty annotation
+				-> annotate implementation class with @ConditionalOnProperty annotation with value
+				-> DI bean(caller bean) application has to explcitily define the property in application.properties
+				e.g. 
+				interface Service {
+				
+				}
+				
+				@Component
+				@ConditionalOnProperty(prefix="order", value="service", havingValue="true", matchIfMissing="false")
+				public class OrderService {
+					
+				}
+				
+				DI bean(caller bean) application.context has to define the property
+				prefix.value=havingValue
+				
+				e.g. 
+				public class ServiceImplemetation {
+					@Autowired(required = false) // for fail safe - default value is true, but often leads to NPE at runtime.
+					public OrderService orderService;
+				}
+				
+				-> it conditionally loads the bean based on the @ConditionalOnProperty annotation value and application.properties config property.
+				-> it control the flow of Bean creation/registering and let caller control whether need to create the Bean or not.
+				-> on abstract reference on DI. it may lead to NoUniqueBeanDefinitionException for conflicts. 
+					solution:
+						1. use concrete reference in DI field
+						2. use @Qualifie
+						3. use @Primary
+				
+				Advantages:
+					1. Toggline feature - change the Bean creation by just the application.properties
+					2. Avoid cluttering application context with unnecessary bean
+					-> in microservices architecture for 2 services having same dependency may don't need few beans or all the beans to be loaded. so that time this annotation helps you to control the Bean creation and decide which to be created.
+					3. save memory - due to 2nd point
+					4. reduce application startup time - due to 2nd point
+				
+				Disadvantages:
+					1. miss configuration may occur
+					2. code complexity may increase on overuse
+					3. multiple bean creation with same configuratio,  brings confusion
+						-> it means if 2 different class has the same @ConditionalOnProperty annotation value
+						-> leads to NoUniqueBeanDefinitionException
+					4. manging application.properties file is quite combursome
+		
+		NOTE: @Primary or @Qualifie annotation helps to indentify which bean to use on abstract reference, if abstract reference has multiple implementation but both the bean might have pre-initialized, but @ConditionalOnProperty actually helps to control the Bean creation flow. wheter Bean would be created or not. and control would be on caller side.
+		
+		
+		=> so basically @Conditional... annotations controls the flow of bean creation based on the conditions like method, value, class etc.
+		
+		
+		-> for if 99% time using single implementation
+			1. use @Primary
+			2. use @Qualifier with single field
+			-> these 2 approaches achieve the same but requires hard coded
+			solution:
+				-> configure abstract reference in @Configuration class and get the value there using @Value annotation. to register the Bean.
+				-> according to the value variable if-else new ConcreteImplementation(); which creates the bean of that.
+				-> abstract reference Bean DI stays as it is with single abstract reference field.
+				-> don't auto configure all concrete implementation by @Component annotation.
+				-> get value from either env variable, application.properties or inline literals.
+				
+				e.g.
+				@Configuration
+				class AppConfig {
+				
+					@Bean
+					public Service RegisterService(@Value("{$isUserService}") boolean isUserService) {
+						if(isUserService) {
+							return new UserService();
+						}
+						else {
+							return new OrderService();
+						}
+					}
+				}
+				
+				inline literals example:
+				@Value("false")
+				
+				application.properties
+				isUserService=true
+			
+		-> for complete dynamic behavior and let user request which to use
+			1) use both @Qualifier seperatly with 2 different fields. and process them accordingly the user requested using if-else. as mentioned above.
+	
+-> if class has constructor spring reflection has to go with that constructor for DI, in that case default constructor cann't be used(or have to explcitily mark with @Autowired).
+		1. for multi constructor spring has to choose one of them annotated by @Autowired. it cann't use the default constructor for bean creation unlike in field DI or setter DI.
+-> additionally for abstract reference of implementation classes of an interface
+have to use the @Qualifier annotation along with the Implementation class name as value in order to
+overcome the ambiguity concern and helps spring to identify which bean to use runtime.
+	
+	
+Bean scope
+1) singletone - default - eagerly initialized in default nature
+2) prototype
+	-> creates new bean on every bean request.
+3) request
+4) session
+
+------------------------------------------------------------------------
+questions:
+1) @Bean vs @Component
+-> @Component is used at class level which denotes the class to be instantiated and creating Bean by applicationContext within the @ComponentScan radar
+-> @Bean is used to create and register the Bean explicitly in the applicationContext
+-> @Bean is used at method level, where method returns the Bean. where those method should be within class which is marked as @Configuration
+-> @Bean gives more control to creating Bean
+
+2) @Component vs @Service
+
+
+
+
+
+
+
+
+------------------------------------------------------
+spring data jpa
+	1) JDBC:
+	-> to communicate with DB.
+	-> need to do all the task manually
+		e.g. connection, querying, statement, transcation
+		
+	2) JPA:
+	-> standard protocol or principle to achieve this thing instead of manually
+	-> set of interfaces
+	-> it's the abstraction layer doesn't provide implementation
+	-> which let you map the Java object directly 
+	
+	3) spring data jpa
+	-> abstraction layer of JPA focusing on spring boot framework and give you more functionality on top of JPA
+	
+	4) ORM
+	-> actual implementation of JPA.
+	-> which does all the code internally like executing JDBC.
+	
+	
+JPA upper level architecture:
+application => spring data JPA => JPA => ORM => JDBC => DB
+
+Entity life cycle upper level architecture and it's component
+
+	Entity ---> EntityManager ---> EntityManagerFactory ---> Persistance
+	
+	EntityManager ----> Persistance context (storage of Entity)
+					interacts
+					
+	EntityManager ----> Entity Transaction
+					creates
+				  ----> Query
+			
+			=> this Entity Transaction and Query is implemented and done by ORM actually.
+			=> so on entityManager.persist(). behind the scene ORM perform the SQL operation.
+		  
+	Entity: 
+	=> a plain POJO which has all the properties which is gonna be mapped with sql Table
+	=> can be created using new Entity();
+	=> class is marked as the @Entity annotation.
+	
+	EntityManager:		
+	=> EntityManager maintains the managed Entity
+	=> EntityManager is created by EntityManagerFactory
+	=> usually there could be multiple EntityManager created by EntityManagerFactory
+	=> a interface
+	
+	EntityManagerFactory:
+	=> creates the EntityManager
+	=> usually only one EntityManagerFactory would be inside a application
+	
+	Persistance:
+	=> create the EntityManagerFactory
+
+	Persistance Context:
+	=> manages the managed Entity by the EntityManager
+	=> storage of Entities
+	
+	Entity Transaction:
+	=> done and implemented by ORM and EntityManager creates that
+	
+	Query:
+	=> done and implemented by ORM and EntityManager creates that
+
+	
+Entity life cycle architecture:
+
+states: 
+	1) Transient:
+	-> newly created Entity
+	e.g. new Car()
+	-> EntityManager is managing the Entity yet.
+	
+	2) Managed:
+	-> managed entity
+	-> when entityManager calls the Entity.persist()
+	
+questions:
+1) can we use ORM directly instead JPA? than why to choose JPA
+-> yes we cab use it. but migrating from ORM to different ORM leads to lot's of effort and cumborsome. so using JPA is standard protocol and principle which would be same across the ORM and application. so just need to change the ORM because implementation would be change only abstraction would be same.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------------------
+1) bean scopes with example
+2) Exception handling
+reference: https://stackoverflow.com/questions/42559832/when-to-use-qualifier-and-profile-annotations
+-> You apply @Profile("profileName") to a class (e.g., a @Component, @Service, or @Configuration class) or a method annotated with @Bean. The annotated element will only be processed and its associated beans created if the specified profile(s) are active. You can also use logical expressions within the annotation (e.g., @Profile("dev & !test")). 
+-> @Profile is applied at class level except for the classes annotated with @Configuration where @Profile is applied at the method level
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------
+resources
+1) setup swagger
+dependency - springdoc-openapi-starter-webmvc-ui
+-> it uses the default spring starter 
+-> no need for additional springfox dependencies
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------
+spring security:
+spring security
+1. filters
+-> part of servlet api and has own lifecycle than spring application context
+-> it have the security filter chain contains multiple filters inside
+
+2. security filter chain
+-> chain of multiple filter 
+-> part of DelegatingFilterProxy
+-> interface
+
+3. DelegatingFilterProxy
+-> acts as a bridge between servlet api and spring application
+-> has implementation to connect servlet api to spring application
+-> contains filterchainproxy
+
+4. FilterChainProxy
+	A Spring Security class that implements the standard javax.servlet.Filter.
+🚀 Role:
+	Acts as the main filter bean that receives every HTTP request
+	Delegates processing to the correct SecurityFilterChain, based on request matching
+
+🔧 Internal Workflow:
+	You define SecurityFilterChain beans.
+	Spring wires them into a FilterChainProxy.
+	FilterChainProxy holds all SecurityFilterChains and decides which one to delegate to for each request.
+	-> List<SecurityFilterChain>
+	-> DefaultSecurityFilterChain implements SecurityFilterChain
+		-> List<Filter>
+	
+	-> so basically FilterChainProxy holds all the filters
+	-> additionally it has the 18 additional filters. inside the class by default
+
+
+Filter
+-> based on the authentication mechanism we choose in security filter chain config
+e.g. .formLogin(), .httpBasic()
+-> it will redirect to those filter
+e.g. .formLogin() -> UserNamePasswordAuthenticationFilter filter
+-> UserNamePasswordAuthenticationFilter is responsible to extract the username-password from http request and pass it repective AuthenticationProvider by AuthenticationManager
+
+AuthenticationProvider
+-> interface
+-> which handles the actual authentication mechanism based on the authentication type
+-> for default username-password authentication by UserNamePasswordAuthenticationFilter it will choose DaoAuthenticationProvider
+-> implementation are
+	e.g. DaoAuthenticationProvider
+	-> we can also have the custom AuthenticationProvider for custom or filter also
+-> return object of Authentication to AuthenticationManager after authentication() performed
+	-> e.g. Authentication object flow: AuthenticationProvider -> AuthenticationManager -> next filters
+
+problem:
+1. for each filter their could be  multiple/different authentication provider
+	-> so how to decide which AuthenticationProvider to use for which filter
+	
+solution:
+1. to address the bridge between filters and AuthenticationProvider
+AuthenticationManager will work
+-> abstraction
+-> implementation is ProviderManager
+
+ProviderManager:
+-> implementation of AuthenticationManager
+-> responsible for delegate the request from filter to respective AuthenticationProvider for authentication by using the support() method
+	-> by iterating over the each AuthenticationProvider implementation.
+	-> each AuthenticationProvider would have the support() method which is used by ProviderManager
+
+UserDetailsService:
+-> interface
+-> responsible for retriving user - from db/in-memory
+-> used by AuthenticationProvider implementation class. e.g. DaoAuthenticationProvider
+-> AuthenticationProvider request to UserDetailsService implementation and retrive the user information.
+-> UserDetailsService is an example of communicating with DB. there could be more interface-implementation for different type of AuthenticationProvider.
+-> use along with the PassworEncoder
+-> so inject PassworEncoder everyTime(register, query)
+
+
+SecurityContext:
+-> interface
+-> abstracted by SecurityContextHandler
+-> holds the object of Authentication object
+-> so basically it holds the single reference of Authentication object for current user for each successfull filter authentication() in order to make it accesible across the filters
+-> Authentication object is also refered as Principle object
+
+
+SecurityContextHandler:
+-> abstraction on top of the SecurityContext interface
+-> has methods like getContext(), clearContext().
+-> it's like utility and maitains the SecurityContext
+
+
+SecurityContextHolderFilter
+-> first filter in default 18 security filter chain
+-> on subsequent request, it cache the authenticated user. and maitains the session
+-> so until the session is there subsequent request won't goes to all filters.
+
+ExceptionTranslationFilter:
+-> at gets executed at almost last filter in default 18 security filter chain
+-> responsible for getting exception and process.
+	-> e.g. in UserNamePasswordAuthenticationFilter if user is not authenticated()
+
+[Client HTTP Request]
+        |
+        v
+[Servlet Container (e.g., Tomcat)]
+        |
+        v
+[DelegatingFilterProxy (Servlet Filter)]
+        |
+        v
+[FilterChainProxy (Spring-managed Filter)]
+        |
+        v
+[SecurityFilterChain (matched by request)]
+        |
+        v
+[Security Filters (e.g., Auth filters, etc.)]
+        |
+        v
+[Application Endpoint (e.g., Controller)]
+
+
+
+
+
+spring security authentication types
+
+1. spring generated username-password => default, form-based login
+2. basic authentication
+2. in-memory/db
+3. LDAP
+4. OAuth2
+5. JWT
